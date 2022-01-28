@@ -15,9 +15,10 @@
 #include "project.h"
 
 #define USBUART_BUFFER_SIZE (64u)
-
-int8 USBUART_sendString(char* sent_message);
+    
+int init_USBUART(void);
 int8 USBUART_recieveString(uint8 *recived_message);
+int8 USBUART_sendString(char* sent_message);
 
 #endif
 
