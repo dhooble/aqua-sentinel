@@ -15,6 +15,7 @@
 #include "project.h"
 
 #define USBUART_BUFFER_SIZE (64u)
+#define USBUART_DEVICE      (0u)
     
 int init_USBUART(void);
 int8 USBUART_recieveString(uint8 *recived_message);
