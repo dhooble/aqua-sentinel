@@ -13,7 +13,7 @@
 #include "atlas_sensors.h"
 #include "USBUART_utils.h"
 //#include "gprs.h"
-//#include "veml7700.h"
+#include "veml7700.h"
 
 //Constant
 #define version_num "v1.4"
@@ -85,7 +85,7 @@ CY_ISR(ISR_timer_1_handler)
                 ORP_value = atlasMeasure(PARAM_ORP);
                 break;
             case VEML7700_CONNECTED:
-                //lum_value = lumMeasure();
+                lum_value = lumMeasure();
                 break;
             case DS18B20_CONNECTED:
                 temp_value = 0;
@@ -135,7 +135,7 @@ int init_setup(void)
     atlasSearch(&connected_devices);
     //init OneWire comm (Dallas Temperature)
     //init VEML7700
-    //vemlSearch(&connected_devices);
+    vemlSearch(&connected_devices);
     //disable watchdog timer
     return 0;
 }
