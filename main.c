@@ -10,7 +10,7 @@
  * ========================================
 */
 #include "project.h"
-//#include "atlas_sensors.h"
+#include "atlas_sensors.h"
 #include "USBUART_utils.h"
 //#include "gprs.h"
 //#include "veml7700.h"
@@ -73,16 +73,16 @@ CY_ISR(ISR_timer_1_handler)
         switch (device_for_measure)
         {
             case ATLAS_PH_CONNECTED:
-                //pH_value = atlasMeasure(PARAM_PH);
+                pH_value = atlasMeasure(PARAM_PH);
                 break;
             case ATLAS_EC_CONNECTED:
-                //cond_value = atlasMeasure(PARAM_COND);
+                cond_value = atlasMeasure(PARAM_COND);
                 break;
             case ATLAS_DO_CONNECTED:
-                //DO_value = atlasMeasure(PARAM_DO);
+                DO_value = atlasMeasure(PARAM_DO);
                 break;
             case ATLAS_ORP_CONNECTED:
-               // ORP_value = atlasMeasure(PARAM_ORP);
+                ORP_value = atlasMeasure(PARAM_ORP);
                 break;
             case VEML7700_CONNECTED:
                 //lum_value = lumMeasure();
@@ -132,7 +132,7 @@ int init_setup(void)
     //start watchdog timer 30s isr priority 0 Cant USE WATCHDOG USE TIMER + ISR
     //init I2C for every Atlas sensor
     I2C_master_Start();
-    //atlasSearch(&connected_devices);
+    atlasSearch(&connected_devices);
     //init OneWire comm (Dallas Temperature)
     //init VEML7700
     //vemlSearch(&connected_devices);
