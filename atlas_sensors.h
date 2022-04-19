@@ -13,7 +13,6 @@
 #define ATLAS_SENSORS_H
 #include "project.h"
 #include <stdio.h>
-#include "USBUART_utils.h"
 
 #define PARAM_PH      (0x01)
 #define PARAM_COND    (0x02)

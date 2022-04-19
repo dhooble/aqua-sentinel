@@ -11,6 +11,16 @@
 */
 #include "atlas_sensors.h"
 
+/**
+*   Function : atlasSearch find every Atlas sensors connected to the controller
+*
+*   The function ping the default address of the agreed Atlas sensors through the
+*   the I2C bus. The command sent is asking for LED status and upon positive answer
+*   the bit representing the sensor is added to the variable named detected_device.
+*
+*   @param  detected_sensor is an unsigned char (uint8) pointer acting as the list of connected sensors.
+*   @return The code listing the detected (Atlas) sensors.
+*/
 int8 atlasSearch(uint8 *detected_devices)
 {
     uint8 error = 0, address,ping_message[3] = {'L',',','?'},recieved_ping[6] = {0}; // modify to turn off LEDs
@@ -39,27 +49,28 @@ int8 atlasSearch(uint8 *detected_devices)
         }
         //open i2c comm at address
         I2C_master_MasterWriteBuf(address,ping_message,3,I2C_master_MODE_COMPLETE_XFER);
+        CyDelay(300);        
         I2C_master_MasterClearStatus();
-        CyDelay(300);
         I2C_master_MasterReadBuf(address,recieved_ping,6,I2C_master_MODE_COMPLETE_XFER);
+        CyDelay(100);
         error = I2C_master_MasterStatus();
         if(error == I2C_master_MSTAT_RD_CMPLT)
         {
             //draw_divider(80, true, '-');
-            USBUART_sendString("La ");
-            USBUART_sendString(sensor_name);
-            USBUART_sendString(" est presente");
-            USBUART_PutCRLF();
+            UART_PC_PutString("La ");
+            UART_PC_PutString(sensor_name);
+            UART_PC_PutString(" est presente");
+            UART_PC_PutCRLF('\0');
             *detected_devices |= device_presence_code;
             
         }
         else
         {
             //draw_divider(80, true, '-');
-            USBUART_sendString("La ");
-            USBUART_sendString(sensor_name);
-            USBUART_sendString(" n'est pas connectee ou est defaillante !");
-            USBUART_PutCRLF();
+            UART_PC_PutString("La ");
+            UART_PC_PutString(sensor_name);
+            UART_PC_PutString(" n'est pas connectee ou est defaillante !");
+            UART_PC_PutCRLF('\0');
         }
         I2C_master_MasterClearWriteBuf();
         I2C_master_MasterClearStatus();
@@ -94,7 +105,7 @@ float atlasMeasure(const uint8 param)
     {
         address = 99;
         param_name = "pH mesure";
-        sensor_name = "Sonde Atlas EZ0O-pH";
+        sensor_name = "Sonde Atlas EZO-pH";
         unit_name = "";
     }
     else if(param == PARAM_COND)
@@ -104,9 +115,15 @@ float atlasMeasure(const uint8 param)
         sensor_name = "Sonde Atlas EZO-EC";
         unit_name = "muS/cm";
     }
+
+/*    I2C_master_MasterClearReadBuf();
+    I2C_master_MasterClearWriteBuf();
+    I2C_master_MasterStatus();
+    CyDelay(100);*/
     I2C_master_MasterWriteBuf(address,command_read,1,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
     CyDelay(900);
-    I2C_master_MasterReadBuf(address,buff_in,20,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+    code = I2C_master_MasterStatus();
+    I2C_master_MasterReadBuf(address,buff_in,12,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
     for(i = 0; i<20; i++)
     {
         if (buff_in[i] == 0)
@@ -117,31 +134,34 @@ float atlasMeasure(const uint8 param)
     }
     
     I2C_master_MasterWriteBuf(address,command_sleep,5,I2C_master_MODE_COMPLETE_XFER); // sends "sleep" command at address through the serial port
-    USBUART_sendString("\t\uFFED ");
-    USBUART_sendString(sensor_name);
+    UART_PC_PutString("\t");
+    UART_PC_PutString(sensor_name);
+    UART_PC_PutCRLF('\0');
+    CyDelay(100);
     code = I2C_master_MasterStatus();
-    if(code == I2C_master_MSTAT_WR_CMPLT)
+    if(code & I2C_master_MSTAT_WR_CMPLT)
     {
+        
+        I2C_master_MasterClearReadBuf();
+        I2C_master_MasterClearWriteBuf();
+        I2C_master_MasterClearStatus();
         sscanf((const char*)buff_in,"%f",&measure);
-        USBUART_sendString("\n\t\t\u2714 ");
-        USBUART_sendString(param_name);
-        USBUART_sendString(" : ");
-        USBUART_PutString((char *)buff_in);
-        //USBUART_(MyMeasure);
-        USBUART_sendString(" ");
-        USBUART_sendString(unit_name);
-        USBUART_PutCRLF();
+        UART_PC_PutString("\t\t ");
+        UART_PC_PutString(param_name);
+        UART_PC_PutString(" : ");
+        UART_PC_PutString((char *)buff_in);
+        UART_PC_PutString(" ");
+        UART_PC_PutString(unit_name);
+        UART_PC_PutCRLF('\0');
 //        draw_divider(80, true, '*');
         return measure;
     }
-    else
-//    {
-        USBUART_sendString("\n\t\t\u2714 La sonde n'est pas connectee ou est defaillante ");
-        USBUART_PutCRLF();
+    
+    UART_PC_PutString("\n\t\t La sonde n'est pas connectee ou est defaillante ");
+    UART_PC_PutCRLF('\0');
 //        draw_divider(80, true, '*');
 //        return -99.0;
-//    }
-
+    
     return 0;
 }
 

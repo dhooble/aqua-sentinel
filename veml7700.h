@@ -12,6 +12,7 @@
 #ifndef VEML770_H
 #define VEML770_H
 #include "project.h"
+#include <stdio.h>
 
 #define USBUART_BUFFER_SIZE (64u)
 #define USBUART_DEVICE      (0u)
