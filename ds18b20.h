@@ -14,6 +14,7 @@
 #define DS18B20_H
 
 #include "project.h"
+#include "utils_aq.h"
 #include <stdio.h>
     
 uint8 OW_Detect(void);
