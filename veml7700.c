@@ -36,7 +36,7 @@ uint8 vemlSearch(uint8 * detected_devices)
     return(VEML7700success);
 }
 
-void getStatus(uint8 stat)
+void getStatus(void)
 {
     uint8 VEML7700success = I2C_master_MasterStatus();
     UART_PC_PutString("\t[INFO](lumMeasure): first status : ");
@@ -58,6 +58,7 @@ void getStatus(uint8 stat)
     if(VEML7700success & I2C_master_MSTAT_ERR_XFER) UART_PC_PutString("I2C_master_MSTAT_ERR_XFER ");
     UART_PC_PutCRLF('\0');
 }
+
 float lumMeasure(void)
 {
     uint16 MyMeasure = 0;
@@ -70,7 +71,6 @@ float lumMeasure(void)
     if(VEML7700success != I2C_master_MSTR_NO_ERROR)
     {
         UART_PC_PutString("[INFO](lumMeasure): master write error.\r\n");
-        getStatus(VEML7700success);
         return -1;
     }
     I2C_master_MasterSendRestart(VEML7700_I2CADDR_DEFAULT,1);
@@ -80,7 +80,7 @@ float lumMeasure(void)
     if(VEML7700success != I2C_master_MSTR_NO_ERROR)
     {
         UART_PC_PutString("[INFO](lumMeasure): master read error.\r\n");
-        getStatus(VEML7700success);
+        getStatus();
         return -1;
     }
     I2C_master_MasterClearReadBuf();

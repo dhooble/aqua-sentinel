@@ -9,8 +9,8 @@
  *
  * ========================================
 */
-#ifndef VEML770_H
-#define VEML770_H
+#ifndef VEML7700_H
+#define VEML7700_H
 #include "project.h"
 #include <stdio.h>
 
@@ -42,6 +42,7 @@
 #define VEML7700_IT_25MS 0x0C  ///< ALS intetgration time 25ms
 
 #define VEML7700_PRESENCE_CODE 0x10
+
     
 uint8 vemlSearch(uint8 * detected_devices);
 float lumMeasure(void);

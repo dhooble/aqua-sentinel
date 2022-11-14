@@ -12,6 +12,7 @@
 #ifndef ATLAS_SENSORS_H
 #define ATLAS_SENSORS_H
 #include "project.h"
+#include "globals_aq.h"
 #include <stdio.h>
 
 #define PARAM_PH      (0x01)

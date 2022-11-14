@@ -314,9 +314,9 @@
   </Group>
   <Group key="Component">
     <Group key="v1">
-      <Data key="cy_boot" value="cy_boot_v6_0" />
+      <Data key="cy_boot" value="cy_boot_v6_10" />
       <Data key="Em_EEPROM_Dynamic" value="Em_EEPROM_Dynamic_v2_20" />
-      <Data key="LIN_Dynamic" value="LIN_Dynamic_v5_0" />
+      <Data key="LIN_Dynamic" value="LIN_Dynamic_v6_0" />
     </Group>
   </Group>
   <Data key="DataVersionKey" value="2" />
@@ -338,7 +338,9 @@
       <Data key="b2bff0f5-daae-47cc-8d26-fc07d69ca3f2" value="Tx_2" />
       <Data key="beca5e2d-f70f-4900-a4db-7eca1ed3126e/8b77a6c4-10a0-4390-971c-672353e2a49c" value="USBUART_Dm" />
       <Data key="beca5e2d-f70f-4900-a4db-7eca1ed3126e/618a72fc-5ddd-4df5-958f-a3d55102db42" value="USBUART_Dp" />
+      <Data key="e851a3b9-efb8-48be-bbb8-b303b216c393" value="led1" />
       <Data key="ed092b9b-d398-4703-be89-cebf998501f6" value="Tx_1" />
+      <Data key="f84bba54-dcc0-44c0-88f3-efcc5f48a5e6" value="led2" />
     </Group>
   </Group>
   <Group key="EEPROM">
@@ -3498,9 +3500,19 @@
         <Data key="Port Format" value="15,6" />
       </Group>
     </Group>
+    <Group key="e851a3b9-efb8-48be-bbb8-b303b216c393">
+      <Group key="0">
+        <Data key="Port Format" value="6,2" />
+      </Group>
+    </Group>
     <Group key="ed092b9b-d398-4703-be89-cebf998501f6">
       <Group key="0">
         <Data key="Port Format" value="0,2" />
+      </Group>
+    </Group>
+    <Group key="f84bba54-dcc0-44c0-88f3-efcc5f48a5e6">
+      <Group key="0">
+        <Data key="Port Format" value="6,3" />
       </Group>
     </Group>
     <Group key="UnAssigned Pins" />

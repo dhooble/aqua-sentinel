@@ -15,6 +15,7 @@
 //#include "gprs.h"
 #include "veml7700.h"
 #include "ds18b20.h"
+#include "utils_aq.h"
 
 //Constant
 #define version_num "v1.4"
@@ -31,20 +32,31 @@
 #define INIT_STATE          1
 #define MEASURE_STATE       2
 #define COMMUNICATE_STATE   3
+#define MAINTENANCE_STATE   4
 
 /* The buffer size is equal to the maximum packet size of the IN and OUT bulk
 * endpoints.
 */
 #define USBUART_BUFFER_SIZE (64u)
+#define BUFFER_SIZE (128u)
 
 //Global variable
 char* site_name = "francon\r\n"; // used in URL for data upload
-uint8 connected_devices = 0u; // code representing connected sensors to poll for measure
+uint8 global_connected_devices = 0u; // code representing connected sensors to poll for measure
+uint8 global_run_parse_loop;
+char global_uart_buffer[BUFFER_SIZE];
 float temp_value, lum_value, pH_value, cond_value, DO_value, ORP_value; // variable to store measures
 uint8 state = INIT_STATE;
+sensor_ph_t sensor_ph = {PH_ATLAS_SENSOR_DEFAULT_ADDRESS,7.0,"",0,{0,0,0},20};
+sensor_do_t sensor_do = {DO_ATLAS_SENSOR_DEFAULT_ADDRESS,0,"",0,{0,0,0},20,0,0b00000011};
+sensor_orp_t sensor_orp = {ORP_ATLAS_SENSOR_DEFAULT_ADDRESS,0.0,"",0,{0,0,0}};
+sensor_ec_t sensor_ec = {EC_ATLAS_SENSOR_DEFAULT_ADDRESS,7.0,"",0,{0,0,0},25,0.54,0x0F,1.0};
+sensor_temp_ow_t sensor_temp_ow = {0.0,12};
+sensor_als_t sensor_als = {0.0,4,25,0};
 
 //Interrupt handlers prototypes
 CY_ISR_PROTO(ISR_timer_1_handler);
+CY_ISR_PROTO(state_timeout_handler);
 
 //Functions protoypes
 int init_setup(void);
@@ -54,11 +66,13 @@ int main(void)
 {
     CyGlobalIntEnable; /* Enable global interrupts. */
     isr_timer_measure_StartEx(ISR_timer_1_handler); /* intialize interrupt and set handler. */
-    
+    isr_state_timeout_StartEx(state_timeout_handler);
+    uint16 iter_buffer = 0;
+    LCD_Start();
     /* Place your initialization/startup code here (e.g. MyInst_Start()) */
     
     init_setup(); // init function (add error handling)
-    Timer_1_Start(); /* launch the timer for measure interval (180s). */
+    Timer_measure_Start(); /* launch the timer for measure interval (180s). */
     for(;;)
     {
         /* Place your application code here. */
@@ -69,16 +83,37 @@ int main(void)
         switch(state)
         {
             case MEASURE_STATE:
-                launch_measure();
+                //launch_measure();
                 state = COMMUNICATE_STATE;
                 break;
             case COMMUNICATE_STATE:
                 state = IDLE_STATE;
                 break;
+            case MAINTENANCE_STATE:
+                //deactivate all irq or timer ?
+                maintenance_utils_aq();
+                state = IDLE_STATE;
+                break;
             default:
                 continue;
         }
-        
+        if(UART_PC_GetRxBufferSize())
+        {
+            UART_PC_PutString("UART_PC heard something\r\n");
+            global_uart_buffer[0] = UART_PC_GetChar();
+            UART_PC_PutChar(global_uart_buffer[0]);
+            UART_PC_PutCRLF('\0');
+            
+            if(global_uart_buffer[0] == 'm')
+            {
+                iter_buffer = 0;
+                UART_PC_PutString("Mode maintenance\r\n");
+                state = MAINTENANCE_STATE;
+            }
+        }
+        led1_Write(~led1_Read());
+        CyDelay(500);
+        led1_Write(~led1_Read());
     }
 }
 
@@ -91,11 +126,11 @@ int main(void)
 CY_ISR(ISR_timer_1_handler)
 {
     //clear timer interrupt
-    Timer_1_ReadStatusRegister();
+    Timer_measure_ReadStatusRegister();
     timer_measure_reset_reg_Write(0x01);
     CyDelay(10);
     state = MEASURE_STATE;
-    Timer_1_Start();
+    Timer_measure_Start();
 }
 
 /**
@@ -132,11 +167,11 @@ int init_setup(void)
     //start watchdog timer 30s isr priority 0 Cant USE WATCHDOG USE TIMER + ISR
     //init I2C for every Atlas sensor
     I2C_master_Start();
-    atlasSearch(&connected_devices);
+    atlasSearch(&global_connected_devices);
     //init OneWire comm (Dallas Temperature)
-    if(!OW_Detect())
+    if(OW_Detect())
     {
-        connected_devices |= DS18B20_CONNECTED;
+        global_connected_devices |= DS18B20_CONNECTED;
         UART_PC_PutString("Capteur temperature connecte\r\n");
     }
     else
@@ -145,9 +180,9 @@ int init_setup(void)
         UART_PC_PutString("Capteur temperature non connecte\r\n");
     }
     //init VEML7700
-    vemlSearch(&connected_devices);
+    vemlSearch(&global_connected_devices);
     //disable watchdog timer
-    state = IDLE_STATE;
+    state =  MAINTENANCE_STATE;//IDLE_STATE;
     return 0;
 }
 
@@ -155,7 +190,7 @@ int init_setup(void)
 *   Function : launch_measure set a round of sampling
 *
 *   Initiate sampling for every plugged in sensors referenced in the status variable
-*   connected_devices.
+*   global_connected_devices.
 *
 *   @return None
 */
@@ -165,7 +200,7 @@ void launch_measure()
     //effectuer les mesures
     for (uint8 i = 0; i < NB_SONDES; i++)
     {
-        device_for_measure = (connected_devices & (0x01<<i));
+        device_for_measure = (global_connected_devices & (0x01<<i));
         switch (device_for_measure)
         {
             case ATLAS_PH_CONNECTED:
@@ -191,4 +226,15 @@ void launch_measure()
         }
     }
 }
+
+CY_ISR(state_timeout_handler)
+{
+    /* handler qui gère l'interruption du timer lie au timeout d'un etat ou d'une communication */
+    global_run_parse_loop = 0;
+    Timer_timeout_ReadStatusRegister();
+    timer_reset_reg_Write(0x01);
+    CyDelay(10);
+}
+
+
 /* [] END OF FILE */
