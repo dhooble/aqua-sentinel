@@ -13,6 +13,7 @@
 #include "atlas_sensors.h"
 //#include "USBUART_utils.h"
 //#include "gprs.h"
+#include "rn2483.h"
 #include "veml7700.h"
 #include "ds18b20.h"
 #include "utils_aq.h"
@@ -41,18 +42,23 @@
 #define BUFFER_SIZE (128u)
 
 //Global variable
-char* site_name = "francon\r\n"; // used in URL for data upload
+char* global_site_name = "test"; // used in URL for data upload
+uint8 global_id = 3;
 uint8 global_connected_devices = 0u; // code representing connected sensors to poll for measure
 uint8 global_run_parse_loop;
 char global_uart_buffer[BUFFER_SIZE];
-float temp_value, lum_value, pH_value, cond_value, DO_value, ORP_value; // variable to store measures
+uint8 global_uart_loop = 0;
+
+float temp_value = 0.0, lum_value = 0.0, pH_value = 0.0, cond_value = 0.0, DO_value = 0.0, ORP_value = 0.0; // variable to store measures
 uint8 state = INIT_STATE;
 sensor_ph_t sensor_ph = {PH_ATLAS_SENSOR_DEFAULT_ADDRESS,7.0,"",0,{0,0,0},20};
 sensor_do_t sensor_do = {DO_ATLAS_SENSOR_DEFAULT_ADDRESS,0,"",0,{0,0,0},20,0,0b00000011};
 sensor_orp_t sensor_orp = {ORP_ATLAS_SENSOR_DEFAULT_ADDRESS,0.0,"",0,{0,0,0}};
 sensor_ec_t sensor_ec = {EC_ATLAS_SENSOR_DEFAULT_ADDRESS,7.0,"",0,{0,0,0},25,0.54,0x0F,1.0};
 sensor_temp_ow_t sensor_temp_ow = {0.0,12};
-sensor_als_t sensor_als = {0.0,4,25,0};
+sensor_als_t sensor_als = {0.0,.config.conf=0x1000,VEML7700_GAIN_1_8,VEML7700_IT_100MS,0};
+
+rn2483_config_t rn2483_config = {RN2483_DEFAULT_DEVEUI,RN2483_DEFAULT_APPEUI,RN2483_DEFAULT_APPKEY,"","","",RN2483_DEFAULT_SF,0};
 
 //Interrupt handlers prototypes
 CY_ISR_PROTO(ISR_timer_1_handler);
@@ -83,10 +89,11 @@ int main(void)
         switch(state)
         {
             case MEASURE_STATE:
-                //launch_measure();
+                launch_measure();
                 state = COMMUNICATE_STATE;
                 break;
             case COMMUNICATE_STATE:
+                //rn2483_send_data(temp_value, lum_value, pH_value, cond_value, DO_value, ORP_value);
                 state = IDLE_STATE;
                 break;
             case MAINTENANCE_STATE:
@@ -111,27 +118,9 @@ int main(void)
                 state = MAINTENANCE_STATE;
             }
         }
-        led1_Write(~led1_Read());
-        CyDelay(500);
-        led1_Write(~led1_Read());
     }
 }
 
-/**
-*   Interruption Handler : ISR_timer_1_handler launch a measure on every connected sensors
-* 
-*   Clear the interrupt, change state to set a round of measure and relaunch the timer
-*
-*/
-CY_ISR(ISR_timer_1_handler)
-{
-    //clear timer interrupt
-    Timer_measure_ReadStatusRegister();
-    timer_measure_reset_reg_Write(0x01);
-    CyDelay(10);
-    state = MEASURE_STATE;
-    Timer_measure_Start();
-}
 
 /**
 *   Function : init_setup initalize UART, OneWire, I2C and IoT
@@ -158,11 +147,18 @@ int init_setup(void)
     CyDelay(100);
     UART_PC_PutCRLF('\0');
     UART_PC_PutString("Site : ");
-    UART_PC_PutString(site_name);
-    
+    UART_PC_PutString(global_site_name);
+    UART_PC_PutCRLF(0);
+     
+    Timer_timeout_Start(); // launch and stop the timer once to allow for change of period later
+   
     //initialising UART for GSM
     UART_GSM_Start();
     //init_gprs();
+    
+    //initialising UART for LoRa
+    uart_lora_Start();
+    //rn2483_init();
     
     //start watchdog timer 30s isr priority 0 Cant USE WATCHDOG USE TIMER + ISR
     //init I2C for every Atlas sensor
@@ -182,7 +178,7 @@ int init_setup(void)
     //init VEML7700
     vemlSearch(&global_connected_devices);
     //disable watchdog timer
-    state =  MAINTENANCE_STATE;//IDLE_STATE;
+    state = IDLE_STATE; //MAINTENANCE_STATE;//IDLE_STATE;
     return 0;
 }
 
@@ -215,24 +211,51 @@ void launch_measure()
             case ATLAS_ORP_CONNECTED:
                 ORP_value = atlasMeasure(PARAM_ORP);
                 break;
-            case VEML7700_CONNECTED:
-                lum_value = lumMeasure();
+            case VEML7700_CONNECTED:    
+                UART_PC_PutString("entering lum measure\r\n");
+                lum_value = get_lum();//lumMeasure();
                 break;
             case DS18B20_CONNECTED:
-                temp_value = tempMeasure();
+                //temp_value = tempMeasure();
                 break;            
             default:
                 break;
         }
     }
 }
+/**
+*   Interruption Handler : ISR_timer_1_handler launch a measure on every connected sensors
+* 
+*   Clear the interrupt, change state to set a round of measure and relaunch the timer
+*
+*/
+CY_ISR(ISR_timer_1_handler)
+{
+    //clear timer interrupt
+    led1_Write(~led1_Read());
+    CyDelay(500);
+    led1_Write(~led1_Read());
+
+    Timer_measure_ReadStatusRegister();
+    timer_measure_reset_reg_Write(0x01);
+    CyDelay(10);
+    state = MEASURE_STATE;
+    Timer_measure_Start();
+}
+
 
 CY_ISR(state_timeout_handler)
 {
     /* handler qui gère l'interruption du timer lie au timeout d'un etat ou d'une communication */
     global_run_parse_loop = 0;
+    
+    led2_Write(~led2_Read());
+    CyDelay(500);
+    led2_Write(~led2_Read());
+    
+    global_uart_loop = 0;
     Timer_timeout_ReadStatusRegister();
-    timer_reset_reg_Write(0x01);
+    //timer_reset_reg_Write(0x01);
     CyDelay(10);
 }
 

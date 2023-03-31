@@ -15,7 +15,8 @@
 #define TYPES_AQ_H
     
 #include "project.h"
-    
+
+#define STATUS_BUFFER_SIZE 15
    
 union Salinity_compensation_val{ // union for salinity compensation for dissolved oxygen sensor
     uint32 val_uS;
@@ -74,7 +75,12 @@ typedef struct sensor_temp_ow_struct {
 }sensor_temp_ow_t;
 
 typedef struct sensor_als_struct {
-    float32 als;
+    float32 als; // value of Ambient Light
+    union {
+        uint8 conf_msb,conf_lsb;
+        uint8 conf_div[2];
+        uint16 conf; // configuration register
+    }config;
     uint8 gain; // valeurs possible : x1 (0b00), x2 (0b01), x1/8 (0b10), x1/4 (0b11)
     uint16 integration_time; // valeurs possible : 25ms (0b1100), 50ms (0b1000), 100ms (0b0000), 200ms (0b0001), 400ms (0b0010), 800ms (0b0011)
     uint8 interrupt_power; // interrupt: on = 0xFX, off = 0x0X; power : on = 0xX0, off = 0xXF

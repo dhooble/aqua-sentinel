@@ -225,23 +225,23 @@ void maintenance_utils_aq(void)
             UART_PC_PutString("\tinto do\r\n");
             if(!strcmp(command[1],"cal")) // calibration (routine or info)
             {
-                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "status" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
             }
             /*else if(!strcmp(command[1],"export"))
             {
                 
-                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
                 I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
             }*/
             else if(!strcmp(command[1],"i2c")) // modify I2C address 
             {
                 sprintf(sensor_buffer,"%s,%s",command[1],command[2]);
-                I2C_master_MasterWriteBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\tsensor answer ?: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
@@ -249,14 +249,15 @@ void maintenance_utils_aq(void)
             }
             else if(!strcmp(command[1],"status")) // read status from device
             {
-                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\tsensro status: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
+                cymemcpy(sensor_do.status,sensor_buffer,STATUS_BUFFER_SIZE);
             }
-            else if(!strcmp(command[1],"o"))
+            else if(!strcmp(command[1],"o")) // removing parameters
             {
                 if(command[2][0] == '?') 
                 {
@@ -266,14 +267,14 @@ void maintenance_utils_aq(void)
                 {
                     sprintf(sensor_buffer, "%s,%s,%s",command[1], command[2], command[3]);
                 }
-                I2C_master_MasterWriteBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
             }
-            else if(!strcmp(command[1],"p"))
+            else if(!strcmp(command[1],"p")) // pressure compensation
             {
                 if(command[2][0] == '?') 
                 {
@@ -283,14 +284,14 @@ void maintenance_utils_aq(void)
                 {
                     sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
                 }
-                I2C_master_MasterWriteBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
             }
-            else if(!strcmp(command[1],"s"))
+            else if(!strcmp(command[1],"s")) // salinity compensation
             {
                 if(command[2][0] == '?') 
                 {
@@ -300,9 +301,9 @@ void maintenance_utils_aq(void)
                 {
                     sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
                 }
-                I2C_master_MasterWriteBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
@@ -317,9 +318,9 @@ void maintenance_utils_aq(void)
                 {
                     sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
                 }
-                I2C_master_MasterWriteBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
@@ -332,17 +333,17 @@ void maintenance_utils_aq(void)
                     sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
                     UART_PC_PutString(sensor_buffer);
                     UART_PC_PutString("\r\n");
-                    I2C_master_MasterWriteBuf(99,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                    I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                     CyDelay(300);
                     I2C_master_MasterClearStatus();
-                    I2C_master_MasterReadBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
+                    I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
                 }
                 else if(command[2][0] == '?') // read led state
                 {
                     sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
-                    I2C_master_MasterWriteBuf(99,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                    I2C_master_MasterWriteBuf(sensor_do.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                     CyDelay(300);
-                    I2C_master_MasterReadBuf(99,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                    I2C_master_MasterReadBuf(sensor_do.address,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 }
                 UART_PC_PutString("\tlight control answer\r\n\t");
                 UART_PC_PutString(sensor_buffer);
@@ -351,20 +352,12 @@ void maintenance_utils_aq(void)
         }
         else if(!strcmp(command[0],"ec") && (global_connected_devices & ATLAS_EC_CONNECTED)) // enter maintenance for Conductivity sensor
         {
-            UART_PC_PutString("\r\n");
-        }
-        else if(!strcmp(command[0],"orp") && (global_connected_devices & ATLAS_ORP_CONNECTED)) // enter maintenance for OxydoReduction Potential sensor
-        {
-            UART_PC_PutString("\r\n");
-        } 
-        else if(!strcmp(command[0],"ph") && (global_connected_devices & ATLAS_PH_CONNECTED)) // enter maintenance for pH sensor
-        {
-            UART_PC_PutString("\tinto ph\r\n");
+            UART_PC_PutString("\tinto ec\r\n");
             if(!strcmp(command[1],"cal")) // calibration (routine or info)
             {
-                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_ec.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
             }
             /*else if(!strcmp(command[1],"export"))
             {
@@ -376,9 +369,9 @@ void maintenance_utils_aq(void)
             else if(!strcmp(command[1],"i2c")) // modify I2C address 
             {
                 sprintf(sensor_buffer,"%s,%s",command[1],command[2]);
-                I2C_master_MasterWriteBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\tsensor answer ?: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
@@ -386,10 +379,78 @@ void maintenance_utils_aq(void)
             }
             else if(!strcmp(command[1],"status")) // read status from device
             {
-                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_ec.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
-                UART_PC_PutString("\tsensor status: ");
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\tsensro status: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+                cymemcpy(sensor_do.status,sensor_buffer,STATUS_BUFFER_SIZE);
+            }
+            else if(!strcmp(command[1],"o")) // removing parameters
+            {
+                if(command[2][0] == '?') 
+                {
+                    sprintf(sensor_buffer, "%s,%c",command[1], command[2][0]);
+                }
+                else
+                {
+                    sprintf(sensor_buffer, "%s,%s,%s",command[1], command[2], command[3]);
+                }
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\ttemperature compensation: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }
+            else if(!strcmp(command[1],"k")) // probe type
+            {
+                if(command[2][0] == '?') 
+                {
+                    sprintf(sensor_buffer, "%s,%c",command[1], command[2][0]);
+                }
+                else
+                {
+                    sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
+                }
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\ttemperature compensation: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }
+            else if(!strcmp(command[1],"s")) // salinity compensation
+            {
+                if(command[2][0] == '?') 
+                {
+                    sprintf(sensor_buffer, "%s,%c",command[1], command[2][0]);
+                }
+                else
+                {
+                    sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
+                }
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\ttemperature compensation: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }else if(!strcmp(command[1],"tds")) // tds
+            {
+                if(command[2][0] == '?') 
+                {
+                    sprintf(sensor_buffer, "%s,%c",command[1], command[2][0]);
+                }
+                else
+                {
+                    sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
+                }
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
             }
@@ -403,9 +464,9 @@ void maintenance_utils_aq(void)
                 {
                     sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
                 }
-                I2C_master_MasterWriteBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                 CyDelay(300);
-                I2C_master_MasterReadBuf(99,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 UART_PC_PutString("\ttemperature compensation: ");
                 UART_PC_PutString(sensor_buffer);
                 UART_PC_PutString("\r\n");
@@ -418,17 +479,158 @@ void maintenance_utils_aq(void)
                     sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
                     UART_PC_PutString(sensor_buffer);
                     UART_PC_PutString("\r\n");
-                    I2C_master_MasterWriteBuf(99,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                    I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                     CyDelay(300);
                     I2C_master_MasterClearStatus();
-                    I2C_master_MasterReadBuf(99,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
+                    I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
+                }
+                else if(command[2][0] == '?') // read led state
+                {
+                    sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
+                    I2C_master_MasterWriteBuf(sensor_ec.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                    CyDelay(300);
+                    I2C_master_MasterReadBuf(sensor_ec.address,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                }
+                UART_PC_PutString("\tlight control answer\r\n\t");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }
+        }
+        else if(!strcmp(command[0],"orp") && (global_connected_devices & ATLAS_ORP_CONNECTED)) // enter maintenance for OxydoReduction Potential sensor
+        {
+            UART_PC_PutString("\tinto ph\r\n");
+            if(!strcmp(command[1],"cal")) // calibration (routine or info)
+            {
+                I2C_master_MasterWriteBuf(sensor_orp.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_orp.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+            }
+            /*else if(!strcmp(command[1],"export"))
+            {
+                
+                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+            }*/
+            else if(!strcmp(command[1],"i2c")) // modify I2C address 
+            {
+                sprintf(sensor_buffer,"%s,%s",command[1],command[2]);
+                I2C_master_MasterWriteBuf(sensor_orp.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_orp.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\tsensor answer ?: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+                sscanf(sensor_buffer,"%d",&(sensor_do.address));
+            }
+            else if(!strcmp(command[1],"status")) // read status from device
+            {
+                I2C_master_MasterWriteBuf(sensor_orp.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_orp.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\tsensor status: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+                cymemcpy(sensor_ph.status,sensor_buffer,STATUS_BUFFER_SIZE);
+            }
+            if(strstr(command[1],"l")) // manage device led
+            {
+                UART_PC_PutString("\tlight control\r\n");
+                if((command[2][0] == '0') || (command[2][0] == '1')) // command led state
+                {
+                    sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
+                    UART_PC_PutString(sensor_buffer);
+                    UART_PC_PutString("\r\n");
+                    I2C_master_MasterWriteBuf(sensor_orp.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                    CyDelay(300);
+                    I2C_master_MasterClearStatus();
+                    I2C_master_MasterReadBuf(sensor_orp.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
                 }
                 else if(command[2][0] == '?') // return led state
                 {
                     sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
-                    I2C_master_MasterWriteBuf(99,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends "read value" command at address through the serial port
+                    I2C_master_MasterWriteBuf(sensor_orp.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
                     CyDelay(300);
-                    I2C_master_MasterReadBuf(99,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                    I2C_master_MasterReadBuf(sensor_orp.address,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                }
+                UART_PC_PutString("\tlight control answer\r\n\t");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }
+        } 
+        else if(!strcmp(command[0],"ph") && (global_connected_devices & ATLAS_PH_CONNECTED)) // enter maintenance for pH sensor
+        {
+            UART_PC_PutString("\tinto ph\r\n");
+            if(!strcmp(command[1],"cal")) // calibration (routine or info)
+            {
+                I2C_master_MasterWriteBuf(sensor_ph.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+            }
+            /*else if(!strcmp(command[1],"export"))
+            {
+                
+                I2C_master_MasterWriteBuf(99,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(99,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+            }*/
+            else if(!strcmp(command[1],"i2c")) // modify I2C address 
+            {
+                sprintf(sensor_buffer,"%s,%s",command[1],command[2]);
+                I2C_master_MasterWriteBuf(sensor_ph.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\tsensor answer ?: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+                sscanf(sensor_buffer,"%d",&(sensor_do.address));
+            }
+            else if(!strcmp(command[1],"status")) // read status from device
+            {
+                I2C_master_MasterWriteBuf(sensor_ph.address,"status",6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,17,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\tsensor status: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+                cymemcpy(sensor_ph.status,sensor_buffer,STATUS_BUFFER_SIZE);
+            }
+            else if(!strcmp(command[1],"t")) // manage temperature compensation
+            {
+                if(command[2][0] == '?') 
+                {
+                    sprintf(sensor_buffer, "%s,%c",command[1], command[2][0]);
+                }
+                else
+                {
+                    sprintf(sensor_buffer, "%s,%s",command[1], command[2]);
+                }
+                I2C_master_MasterWriteBuf(sensor_ph.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                CyDelay(300);
+                I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,8,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
+                UART_PC_PutString("\ttemperature compensation: ");
+                UART_PC_PutString(sensor_buffer);
+                UART_PC_PutString("\r\n");
+            }
+            if(strstr(command[1],"l")) // manage device led
+            {
+                UART_PC_PutString("\tlight control\r\n");
+                if((command[2][0] == '0') || (command[2][0] == '1')) // command led state
+                {
+                    sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
+                    UART_PC_PutString(sensor_buffer);
+                    UART_PC_PutString("\r\n");
+                    I2C_master_MasterWriteBuf(sensor_ph.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                    CyDelay(300);
+                    I2C_master_MasterClearStatus();
+                    I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,6,I2C_master_MODE_COMPLETE_XFER);
+                }
+                else if(command[2][0] == '?') // return led state
+                {
+                    sprintf(sensor_buffer,"%s,%s", command[1], command[2]);
+                    I2C_master_MasterWriteBuf(sensor_ph.address,sensor_buffer,3,I2C_master_MODE_COMPLETE_XFER); // sends command at address through the serial port
+                    CyDelay(300);
+                    I2C_master_MasterReadBuf(sensor_ph.address,sensor_buffer,2,I2C_master_MODE_COMPLETE_XFER); // read value from address through serial port (reading more than enough bytes)
                 }
                 UART_PC_PutString("\tlight control answer\r\n\t");
                 UART_PC_PutString(sensor_buffer);
@@ -437,10 +639,35 @@ void maintenance_utils_aq(void)
         }
         else if(!strcmp(command[0],"ds") && (global_connected_devices & DS18B20_CONNECTED)) // enter maintenance for Temperature sensor
         {
+            UART_PC_PutString("Capteur de temperature DS18B20\r\n");
+            if(!strcmp(command[1],"res")) // resolution of measure
+            {
+                UART_PC_PutString("Resolution\r\n");
+                continue;
+            }
             UART_PC_PutString("\r\n");
         }
         else if(!strcmp(command[0],"veml") && (global_connected_devices & VEML7700_CONNECTED)) // enter maintenance for Luminosity sensor
         {
+            UART_PC_PutString("Capteur de luminosite VEML7700\r\n");
+            if(!strcmp(command[0],"rconf"))
+            {
+                I2C_master_MasterSendStart(VEML7700_I2CADDR_DEFAULT,0);
+                I2C_master_MasterWriteByte(VEML7700_ALS_CONFIG);
+                
+                I2C_master_MasterSendRestart(VEML7700_I2CADDR_DEFAULT,1);
+                sensor_als.config.conf_div[0] = I2C_master_MasterReadByte(I2C_master_ACK_DATA);
+                sensor_als.config.conf_div[1] = I2C_master_MasterReadByte(I2C_master_NAK_DATA);
+                I2C_master_MasterSendStop();
+            }
+            else if(!strcmp(command[0],"wconf"))
+            {
+                I2C_master_MasterSendStart(VEML7700_I2CADDR_DEFAULT,0);
+                I2C_master_MasterWriteByte(VEML7700_ALS_CONFIG);
+                I2C_master_MasterWriteByte(sensor_als.config.conf_div[0]);
+                I2C_master_MasterWriteByte(sensor_als.config.conf_div[1]);
+                I2C_master_MasterSendStop();
+            }
             UART_PC_PutString("\r\n");
         }
         else if(!strcmp(command[0],"sample_freq"))
@@ -451,10 +678,6 @@ void maintenance_utils_aq(void)
             UART_PC_PutString("s\r\n");
             //reset_timer_measure_period(TIMER_MEASURE_FREQ_CONST); // multiply by atoi of new period
             
-        }
-        else if(!strcmp(global_uart_buffer,"list"))
-        {
-            UART_PC_PutString("\r\n");
         }
         else
         {

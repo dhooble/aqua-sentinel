@@ -15,6 +15,8 @@
 #include "project.h"
 #include "types_aq.h"
 #include "globals_aq.h"
+#include "ds18b20.h"
+#include "veml7700.h"
 #include <stdio.h>
   
 #define BUFFER_SIZE (128u)
