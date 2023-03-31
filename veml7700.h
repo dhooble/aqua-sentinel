@@ -13,6 +13,7 @@
 #define VEML7700_H
 #include "project.h"
 #include <stdio.h>
+#include "globals_aq.h"
 
 #define USBUART_BUFFER_SIZE (64u)
 #define USBUART_DEVICE      (0u)
@@ -43,9 +44,26 @@
 
 #define VEML7700_PRESENCE_CODE 0x10
 
+#define CST_LUX1 0.00000000000060135
+#define CST_LUX2 0.000000093924
+#define CST_LUX3 0.000081488
+#define CST_LUX4 1.0023
+
     
 uint8 vemlSearch(uint8 * detected_devices);
 float lumMeasure(void);
+
+uint8 set_gain(uint8 gain);
+uint8 set_IT(uint8 it);
+uint16 get_count(void);
+uint8 set_SD(uint8 sd);
+void increase_gain();
+void increase_it();
+void decrease_it();
+float64 lux_calc(float32 count);
+float get_resolution(void);
+void reset_param(void);
+float get_lum(void);
 
 #endif
 /* [] END OF FILE */
