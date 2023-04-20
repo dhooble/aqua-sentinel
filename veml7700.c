@@ -14,6 +14,14 @@
 
 float32 tab_resolution[4][6] = {{0.0576,0.0288,0.0144,0.0072,0.1152,0.2304},{0.0288,0.0144,0.0072,0.0036,0.0576,0.01152},{0.4608,0.2304,0.1152,0.0576,0.9216,1.8432},{0.2304,0.1152,0.0576,0.0288,0.4608,0.9216}};
 
+/**
+*   Function : vemlSearch pings the I2C bus to find a VEML7700
+*
+*   The function pings the I2C bus by sending the default config to the sensor
+*
+*   @param  detected_devices is a char (uint8) pointer used as the list of connected devieces.
+*   @return 0 if the process failed and any positive value otherwise (uint8).
+*/
 uint8 vemlSearch(uint8 * detected_devices)
 {
     uint8 VEML7700success;
@@ -37,6 +45,15 @@ uint8 vemlSearch(uint8 * detected_devices)
     return(VEML7700success);
 }
 
+/**
+*   Function : getStatus sends the content of the status register
+*
+*   The function interprets the value recieved from the fonction I2C_master_MasterStatus()
+*   and sends the interpretation of the status register to the maintenance serial 
+*   connection. 
+*
+*   @param  status is a uint8 value recieved from the fonction I2C_master_MasterStatus().
+*/
 void getStatus(uint8 status)
 {
     uint8 VEML7700success = I2C_master_MasterStatus();
@@ -60,6 +77,15 @@ void getStatus(uint8 status)
     UART_PC_PutCRLF('\0');
 }
 
+/**
+*   Function : [DEPRECATED] lumMeasure get the value from the VEML7700 
+*
+*   [DEPRECATED]
+*   The function reads the value of ALS from the register of the VEML7700.
+*   [DEPRECATED]
+*
+*   @return The raw value (float) from the sensor.
+*/
 float lumMeasure(void)
 {
     uint16 MyMeasure = 0;
@@ -98,6 +124,18 @@ float lumMeasure(void)
     return 4*MyMeasure* 0.0576; // calcul extrait de la bibliothèque originale (4* => gain)
 }
 
+/**
+*   Function : set_gain set the gain of the sensor
+*
+*   The function sends the new gain to the VEM7700.
+*   VEML7700_GAIN_1   (00) = ALS gain x 1
+*   VEML7700_GAIN_2   (01) = ALS gain x 2
+*   VEML7700_GAIN_1_8 (10) = ALS gain x (1/8)
+*   VEML7700_GAIN_1_4 (11) = ALS gain x (1/4)
+*
+*   @param  gain is a uint8.
+*   @return 0 if gain is already set to wanted value and 1 otherwise.
+*/
 uint8 set_gain(uint8 gain)
 {
     uint8 conf[3] = {VEML7700_ALS_CONFIG,sensor_als.config.conf_lsb,0};
@@ -112,6 +150,20 @@ uint8 set_gain(uint8 gain)
     return 1;
 }
 
+/**
+*   Function : set_IT set the integration time of the sensor
+*
+*   The function sends the integration time as a code to the VEML7700.
+*   VEML7700_IT_100MS (0000) = 100ms
+*   VEML7700_IT_200MS (0001) = 200ms
+*   VEML7700_IT_400MS (0010) = 400ms
+*   VEML7700_IT_800MS (0011) = 800ms
+*   VEML7700_IT_50MS  (1000) = 50ms
+*   VEML7700_IT_25MS  (1100) = 25ms
+*
+*   @param  it is a uint8. Values are constants.
+*   @return 0 if integration time is already set to wanted value and 1 otherwise.
+*/
 uint8 set_IT(uint8 it)
 {
     uint8 conf[3] = {VEML7700_ALS_CONFIG,0,0};
@@ -125,6 +177,14 @@ uint8 set_IT(uint8 it)
     return 1;
 }
 
+/**
+*   Function : get_count get the raw value of ALS from the sensor
+*
+*   The function get the raw value of ALS from the sensor. This function is yet 
+*   unstable.
+*
+*   @return -1 if an incident occured, the value from the sensor otherwise.
+*/
 uint16 get_count(void)
 {
     int16 MyMeasure = 0;
@@ -169,6 +229,14 @@ uint16 get_count(void)
     return MyMeasure;
 }
 
+/**
+*   Function : set_SD turns the sensor on or off
+*
+*   The function turns the sensor on or off
+*
+*   @param  is a uint8. 1 for on and 0 for off
+*   @return 1 if operation was successful, -1 otherwise.
+*/
 uint8 set_SD(uint8 sd)
 {
     uint8 conf[3] = {VEML7700_ALS_CONFIG,0,sensor_als.config.conf_msb};
@@ -185,6 +253,12 @@ uint8 set_SD(uint8 sd)
     return 1;
 }
 
+/**
+*   Function : increase_gain increases the gain of the sensor by one step
+*
+*   The function increases the gain of the sensor by one step until the maximum is reached.
+*
+*/
 void increase_gain()
 {
     
@@ -210,6 +284,12 @@ void increase_gain()
     }
 }
 
+/**
+*   Function : increase_it increases the integration time of the sensor by one step
+*
+*   The function increases the integration time of the sensor by one step until the maximum is reached.
+*
+*/
 void increase_it()
 {
     
@@ -236,6 +316,13 @@ void increase_it()
             break;
     }
 }
+
+/**
+*   Function : decrease_it decreases the integration time of the sensor by one step
+*
+*   The function decreases the integration time of the sensor by one step until the minimum is reached.
+*
+*/
 void decrease_it()
 {
     UART_PC_PutString("decrease IT\r\n");
@@ -268,6 +355,14 @@ void decrease_it()
     }
 }
 
+/**
+*   Function : get_resolution Returns the current resolution of the sensor
+*
+*   The function Returns the current resolution of the sensor depending on the value
+*   of the gain and the integration time. The values are stored in a float32 array.
+*
+*   @return The current resolution as a float32.
+*/
 float32 get_resolution(void)
 {
     uint8 index_gain = sensor_als.gain;
@@ -277,6 +372,15 @@ float32 get_resolution(void)
     return tab_resolution[index_gain][index_it];
 }
 
+/**
+*   Function : power compute the operation value to the power of exp
+*
+*   The function compute the operation value to the power of exp through a loop.
+*
+*   @param  value is a float32 value that will be raised to the power of exp.
+*   @param  exp is a unsigned char (uint8) used as exponent.
+*   @return The result as a float32.
+*/
 float32 power(float32 value, uint8 exp)
 {
     float32 result = value;
@@ -288,6 +392,16 @@ float32 power(float32 value, uint8 exp)
     return result;
 }
 
+/**
+*   Function : lux_calc compute the ALS with sensor correction
+*
+*   The function compute the Ambiant Light Sensor value with sensor correction. The
+*   follow the instructions listed in the document "Designing the VEML7700 Onto an 
+*   application".
+*
+*   @param  count is a char pointer addressed to where the resulting string will be stored.
+*   @return The quality of the signal as a float.
+*/
 float64 lux_calc(float32 count)
 {
     float32 x = count*get_resolution();
@@ -306,7 +420,13 @@ float64 lux_calc(float32 count)
     return CST_LUX1*power(x,4)-CST_LUX2*power(x,3)+CST_LUX3*power(x,2)+CST_LUX4*x;
 }
 
-
+/**
+*   Function : reset_param set the sensor's parameters back to default
+*
+*   The function set the sensor's parameters back to default meaning the gain value
+*   is 1/8 and integration time is 100ms.
+*
+*/
 void reset_param(void)
 {
     uint8 VEML7700success;
@@ -333,6 +453,14 @@ void reset_param(void)
     UART_PC_PutString("Capteur lum : reset error\r\n");
 }
 
+/**
+*   Function : get_lum get the corrected value of Ambient Light
+*
+*   The function get the corrected value of Ambient Light by applaying the algorithm
+*   from the document Designing the VEML7700 Onto an application".
+*
+*   @return The value of ambient light as a float.
+*/
 float get_lum(void)
 {
     uint16 count;
