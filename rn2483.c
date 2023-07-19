@@ -12,11 +12,32 @@
 
 #include "rn2483.h"
 
+/**
+*   Function : n2483_is_plugged pings the UART Connection to find a RN2483
+*
+*   The function pings the the UART Connection to find a RN2483. (incomplete)
+*
+*   @return 0 (uint8).
+*/
 uint8 n2483_is_plugged(void) // verifier que le RN2483 est connecte au PSoC
 {
     return 0;
 }
 
+/**
+*   Function : rn2483_send_data sends the measured values through LoRaWAN
+*
+*   The function sends the measured values from connected sensors through LoRaWAN.
+*   CAN/MUST BE IMPROVED
+*
+*   @param  temp is a float value collected from the temperature sensor.
+*   @param  lum is a float value collected from the light sensor.
+*   @param  ph is a float value collected from the ph sensor.
+*   @param  cond is a float value collected from the conductivity sensor.
+*   @param  oxy is a float value collected from the dissolved oxygen sensor.
+*   @param  red is a float value collected from the redox sensor.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_send_data(float temp, float lum, float ph, float cond, float oxy, float red)
 {
     char message[128],message_hex[256];
@@ -52,9 +73,18 @@ uint8 rn2483_send_data(float temp, float lum, float ph, float cond, float oxy, f
     UART_PC_PutCRLF(0);
     
     rn2483_mac_tx(RN2483_MAC_TX_MODE_CNF,220,message_hex);
-    return 0;
+    return 1;
 }
 
+/**
+*   Function : rn2483_init initialize the RN2483 with default parameters
+*
+*   The function initialize the RN2483 with default parameters such as the deveui, appeui
+*   and the appkey. it also realize a join operation (by default in OTAA to confirm that
+*   the configuration is correct. 
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_init()
 {
     uint8 i = 0, join_result;
@@ -85,11 +115,32 @@ uint8 rn2483_init()
     return 0;
 }
 
+/**
+*   Function : rn_get_period returns the period value for the counter
+*
+*   The function returns the period value for the counter of the PSoC calculated from a value
+*   in millisecond and taking the counter clock speed in account.
+*
+*   @param  time_ms is a char (uint8) used to calculate the period value.
+*   @return the period value as a uint32.
+*/
 uint32 rn_get_period(uint16 time_ms)
 {
     return time_ms*FREQ_COUNTER/1000;
 }
 
+/**
+*   Function : rn_get_serial_message monitors the serial port for a given time to retrieve a message
+*
+*   The function monitors the serial port for a time given as a parameter in order to
+*   retrieve a message. The monitoring time given as a parameter in millisecond is 
+*   recomputed to fit the scale of clock used for the timer that counts the ellapsed time.
+*   The message recieved is stored in an string from the char pointer given as an
+*   argument.
+*
+*   @param  waiting_delay is a int32 value representing the monitoring time in milliseconds (ms).
+*   @param  message is a char pointer addressed to where the recieved string will be stored.
+*/
 void rn_get_serial_message(int32 waiting_delay, char *message)
 {  
     char read;
@@ -117,6 +168,15 @@ void rn_get_serial_message(int32 waiting_delay, char *message)
 
 
 //------------------------------------------- LoRaWAN -------------------------------------------
+/**
+*   Function : rn2483_mac_join realize a join operation
+*
+*   The function sends the command for a join operation using the mode given as a parameter.
+*
+*   @param  mode is a char (uint8) used to state the mode (OTAA or ABP). It can take 2 values:
+*   RN2483_CONNECT_MODE_OTAA (0) or RN2483_CONNECT_MODE_ABP ([1;254]).
+*   @return the mode chosen(uint8).
+*/
 uint8 rn2483_mac_join(uint8 mode) // connecter le module LoRaWAN RN2483 avec choix du mode (otaa, abp) (join)
 {
     char message[128] = "";
@@ -136,6 +196,17 @@ uint8 rn2483_mac_join(uint8 mode) // connecter le module LoRaWAN RN2483 avec cho
     return mode;
 }
 
+/**
+*   Function : rn2483_mac_tx sends data with LoRaWAN
+*
+*   The function sends data with LoRaWAN through a specified port. The message can request to
+*   send back a confirmation or not according to the parameter 'mode'.
+*
+*   @param  mode is a char (uint8) used to request a confirmation that the message has been recieved (0:no confirmation; [1,254]:confirmation).
+*   @param  port is a char (uint8) used to set the port.
+*   @param  payload is a char (uint8) pointer to the payload (message).
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_tx(uint8 mode, uint8 port, char *payload) // envoyer une chaine de donnee sur un port spécifique (tx)
 {
     char cmd[128] = "mac tx";
@@ -146,8 +217,17 @@ uint8 rn2483_mac_tx(uint8 mode, uint8 port, char *payload) // envoyer une chaine
     UART_PC_PutCRLF(0);
     uart_lora_PutString(cmd);
     rn_get_serial_message(10000,cmd);
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_pause put the LoRaWAN stack on pause
+*
+*   The function put the LoRaWAN stack on pause for 'timeout'
+*
+*   @param  timeout is a char (uint8) used as the length of pause time.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_pause(uint16 timeout) // arreter/mettre en pause la stack LoRaWAN (to change radio configuration) (pause)
 {
     char cmd[16] = "mac pause";
@@ -156,17 +236,43 @@ uint8 rn2483_mac_pause(uint16 timeout) // arreter/mettre en pause la stack LoRaW
         sprintf(cmd,"%s %u\r\n",cmd,timeout);
     }
     uart_lora_PutString(cmd);
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_resume restarts the LoRaWAN stack
+*
+*   The function restarts the LoRaWAN stack
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_resume(void) // reprendre le fonctionnement de la stack LoRaWAN (resume)
 {
     uart_lora_PutString("mac resume\r\n");
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_save saves the configuration of the device in EEPROM
+*
+*   The function saves the configuration of the device in EEPROM (deveui,appeui,appkey,...)
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_save(void) // sauvegarder en EEPROM les paramètres de classe A
 {
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_set_deveui set the deveui on the device
+*
+*   The function set the deveui stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the deveui.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_deveui(char *deveui) // modifier le DevEUI (8 bytes)
 {
     char cmd[32] = "mac set deveui";
@@ -179,6 +285,14 @@ uint8 rn2483_mac_set_deveui(char *deveui) // modifier le DevEUI (8 bytes)
     return 0;
 }
 
+/**
+*   Function : rn2483_mac_get_deveui get the deveui from the device
+*
+*   The function get the deveui from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_get_deveui(void) // recuperer le DevEUI (8 bytes)
 {
     char cmd[17] = "mac get deveui\r\n";
@@ -189,6 +303,15 @@ uint8 rn2483_mac_get_deveui(void) // recuperer le DevEUI (8 bytes)
     return 0;
 }
 
+/**
+*   Function : rn2483_mac_set_appeui set the appeui on the device
+*
+*   The function set the appeui stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the appeui.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_appeui(char *appeui) // recuperer l'AppEUI (8 bytes)
 {
     char cmd[32] = "mac set appeui";
@@ -201,7 +324,15 @@ uint8 rn2483_mac_set_appeui(char *appeui) // recuperer l'AppEUI (8 bytes)
     return 0;
 }
 
-uint8 rn2483_mac_get_appeui(char *appeui) // recuperer l'AppEUI (8 bytes)
+/**
+*   Function : rn2483_mac_get_appeui get the appeui from the device
+*
+*   The function get the appeui from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
+uint8 rn2483_mac_get_appeui(void) // recuperer l'AppEUI (8 bytes)
 {
     char cmd[17] = "mac get appeui\r\n";
     
@@ -211,6 +342,15 @@ uint8 rn2483_mac_get_appeui(char *appeui) // recuperer l'AppEUI (8 bytes)
     return 0;
 }
 
+/**
+*   Function : rn2483_mac_set_appkey set the appkey on the device
+*
+*   The function set the appkey stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the appkey.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_appkey(char *appkey) // modifier l'AppKey (16 bytes)
 {
     char cmd[32] = "mac set appkey";
@@ -220,8 +360,17 @@ uint8 rn2483_mac_set_appkey(char *appkey) // modifier l'AppKey (16 bytes)
     uart_lora_PutString(cmd);
     rn_get_serial_message(1000,cmd);
     if(!strcmp(cmd,"ok")) return 2;
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_get_appkey get the appkey from the device
+*
+*   The function get the appkey from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_get_appkey(char *appkey) // recuperer l'AppKey (16 bytes)
 {
     char cmd[17] = "mac get appkey\r\n";
@@ -232,6 +381,15 @@ uint8 rn2483_mac_get_appkey(char *appkey) // recuperer l'AppKey (16 bytes)
     return 0;
 }
 
+/**
+*   Function : rn2483_mac_set_devaddr set the devaddr on the device
+*
+*   The function set the devaddr stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the devaddr.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_devaddr(char *devaddr) // modifier le DevAddr (4 bytes)
 {
     char cmd[24] = "mac set devaddr";
@@ -241,8 +399,17 @@ uint8 rn2483_mac_set_devaddr(char *devaddr) // modifier le DevAddr (4 bytes)
     uart_lora_PutString(cmd);
     rn_get_serial_message(1000,cmd);
     if(!strcmp(cmd,"ok")) return 2;
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_get_devaddr get the devaddr from the device
+*
+*   The function get the devaddr from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_get_devaddr(char *devaddr) // recuperer le DevAddr (4 bytes)
 {
     char cmd[17] = "mac get devaddr\r\n";
@@ -252,6 +419,16 @@ uint8 rn2483_mac_get_devaddr(char *devaddr) // recuperer le DevAddr (4 bytes)
     cymemcpy(rn2483_config.devaddr,cmd,RN2483_SIZE_DEVADDR);
     return 0;
 }
+
+/**
+*   Function : rn2483_mac_set_appskey set the appskey on the device
+*
+*   The function set the appskey stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the appskey.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_appskey(char *appskey) // modifier l'AppSKey (16 bytes)
 {
     char cmd[64] = "mac set appskey";
@@ -261,8 +438,18 @@ uint8 rn2483_mac_set_appskey(char *appskey) // modifier l'AppSKey (16 bytes)
     uart_lora_PutString(cmd);
     rn_get_serial_message(1000,cmd);
     if(!strcmp(cmd,"ok")) return 2;
+    return 0;
 }
 
+
+/**
+*   Function : rn2483_mac_get_appskey get the appskey from the device
+*
+*   The function get the appskey from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_get_appskey(char *appskey) // recuperer l'AppSKey (16 bytes)
 {
     char cmd[17] = "mac get appskey\r\n";
@@ -273,6 +460,15 @@ uint8 rn2483_mac_get_appskey(char *appskey) // recuperer l'AppSKey (16 bytes)
     return 0;
 }
 
+/**
+*   Function : rn2483_mac_set_nwkskey set the nwkskey on the device
+*
+*   The function set the nwkskey stored in the rn2483 configuration sctructure
+*   to the device.
+*
+*   @param  deveui is a char (uint8) pointer to the nwkskey.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_set_nwkskey(char *nwkskey) // modifier le NwkSKey (16 bytes)
 {
     char cmd[64] = "mac set nwkskey";
@@ -282,8 +478,17 @@ uint8 rn2483_mac_set_nwkskey(char *nwkskey) // modifier le NwkSKey (16 bytes)
     uart_lora_PutString(cmd);
     rn_get_serial_message(1000,cmd);
     if(!strcmp(cmd,"ok")) return 2;
+    return 0;
 }
 
+/**
+*   Function : rn2483_mac_get_nwkskey get the nwkskey from the device
+*
+*   The function get the nwkskey from the device and store it in the rn2483 configuration 
+*   structure.
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_mac_get_nwkskey(char *nwkskey) // recuperer le NwkSKey (16 bytes)
 {
     char cmd[17] = "mac get nwkskey\r\n";
@@ -297,35 +502,89 @@ uint8 rn2483_mac_get_nwkskey(char *nwkskey) // recuperer le NwkSKey (16 bytes)
 
 //-------------------------------------------- LoRa ---------------------------------------------
 
+/**
+*   Function : rn2483_radio_tx sends data with LoRa
+*
+*   The function sends data with LoRa
+*
+*   @param  payload is a char (uint8) pointer to the payload to send.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_tx(char *payload) // envoyer des paquets en LoRa
 {
+    return 0;
 }
 
+/**
+*   Function : rn2483_radio_rx sends data with LoRa
+*
+*   The function  data with LoRa
+*
+*   @param  payload is a char (uint8) pointer to space to store the recieved payload.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_rx(char *payload) // recevoir des paquets en LoRa
-{ 
+{
+    return 0;
 }
 
+/**
+*   Function : rn2483_radio_rxstop stops the continous message reception
+*
+*   The function stops the continous message reception
+*
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_rxstop(void) // arreter la reception continue (rxstop)
 {
     uart_lora_PutString("radio rxstop\r\n");
+    return 0;
 }
 
+/**
+*   Function : rn2483_radio_set_freq sets the frequency of the carrier signal
+*
+*   The function set the frequency of the carrier signal from 433050000 to 434790000
+*   or from 863000000 to 870000000, in Hz.
+*
+*   @param  freq is a int (uint32) used to set the frequency of the carrier signal.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_set_freq(uint32 freq) // modifier la fréquence de la porteuse
 {
     char cmd[16] = "radio set freq";
-    sprintf(cmd,"%s %u\r\n",cmd,freq);
+    sprintf(cmd,"%s %lu\r\n",cmd,freq);
     uart_lora_PutString(cmd);
+    return 0;
 }
 
+/**
+*   Function : rn2483_radio_set_sf sets the Spreading Factor (SF)
+*
+*   The function set the Spreading Factor (SF)
+*
+*   @param  sf is a char (uint8) used set the spreading factor.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_set_sf(uint8 sf) // modifier le spreading factor (SF)
 {
     char cmd[16] = "radio set deveui";
     sprintf(cmd,"%s sf%u\r\n",cmd,sf);
     uart_lora_PutString(cmd);
+    return 0;
 }
 
+/**
+*   Function : rn2483_radio_set_mod sets the modulation of the signal
+*
+*   The function sets the modulation of the signal with 2 possible modes: LoRa or FSK
+*
+*   @param  detected_devices is a char (uint8) pointer used as the list of connected devieces.
+*   @return 0 if the process succeed and any positive value otherwise (uint8).
+*/
 uint8 rn2483_radio_set_mod(uint8 mod) // modifier la modulation (LoRa, FSK)
 {
+    return 0;
 }
 
 

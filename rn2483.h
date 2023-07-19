@@ -71,7 +71,8 @@ typedef struct rn2483_config_struct
 } rn2483_config_t;
 
 // variables globales
-extern rn2483_config_t rn2483_config; 
+extern rn2483_config_t rn2483_config;
+
 // prototypes de fonctions
 
 uint8 rn2483_is_plugged(void); // verifier que le RN2483 est connecte au PSoC
@@ -87,7 +88,7 @@ uint8 rn2483_mac_save(void); // sauvegarder en EEPROM les paramètres de classe 
 uint8 rn2483_mac_set_deveui(char *deveui); // modifier le DevEUI (8 bytes)
 uint8 rn2483_mac_get_deveui(void); // modifier le DevEUI (8 bytes)
 uint8 rn2483_mac_set_appeui(char *appeui); // modifier l'AppEUI (8 bytes)
-uint8 rn2483_mac_get_appeui(char *appeui); // recuperer l'AppEUI (8 bytes)
+uint8 rn2483_mac_get_appeui(void); // recuperer l'AppEUI (8 bytes)
 uint8 rn2483_mac_set_appkey(char *appkey); // modifier l'AppKey (16 bytes)
 uint8 rn2483_mac_get_appkey(char *appkey); // recuperer l'AppKey (16 bytes)
 uint8 rn2483_mac_set_devaddr(char *devaddr); // modifier le DevAddr (4 bytes)
