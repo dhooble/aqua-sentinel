@@ -20,8 +20,8 @@
 #define PARAM_DO      (0x04)
 #define PARAM_ORP     (0x08)
 
-int8 atlasSearch(uint8 *detected_devices);
-float atlasMeasure(const uint8 param);
+int8 atlasSearch(uint8 *detected_devices); // Checks for Atlas Scientific sensors connected through I2C
+float atlasMeasure(const uint8 param); // Takes a measure from specified Atlas Scientific sensor
 
 #endif
 /* [] END OF FILE */
