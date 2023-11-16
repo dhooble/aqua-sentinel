@@ -24,7 +24,8 @@
 int8 atlasSearch(uint8 *detected_devices)
 {
     uint8 error = 0, address,ping_message[3] = {'L',',','?'},recieved_ping[6] = {0}; // modify to turn off LEDs
-    uint8 device_presence_code = 0u;    
+    uint8 device_presence_code = 0u; 
+    void (*pin_write_ptr)(uint8);
     char *sensor_name = "test";
     for(address = 97; address < 101; address++)
     {
@@ -33,20 +34,25 @@ int8 atlasSearch(uint8 *detected_devices)
             case 97:                                 
                 sensor_name = "sonde Atlas EZO-DO";
                 device_presence_code = PARAM_DO;
+                pin_write_ptr = &ctrl_do_Write;
                 break; 
             case 98:
                 sensor_name = "sonde Atlas EZO-ORP";            
                 device_presence_code = PARAM_ORP;
+                pin_write_ptr = &ctrl_orp_Write;
                 break; 
             case 99:
                 sensor_name = "sonde Atlas EZO-pH";
                 device_presence_code = PARAM_PH;
+                pin_write_ptr = &ctrl_ph_Write;
                 break; 
             case 100:
                 sensor_name = "sonde Atlas EZO-EC";
                 device_presence_code = PARAM_COND;
+                pin_write_ptr = &ctrl_ec_Write;
                 break; 
         }
+        (*pin_write_ptr)(1);
         //open i2c comm at address
         I2C_master_MasterWriteBuf(address,ping_message,3,I2C_master_MODE_COMPLETE_XFER);
         CyDelay(300);        
@@ -77,6 +83,7 @@ int8 atlasSearch(uint8 *detected_devices)
         I2C_master_MasterClearStatus();
         CyDelay(700);
     }
+    (*pin_write_ptr)(0);
     return *detected_devices;
 }
 
